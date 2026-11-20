@@ -1,0 +1,20 @@
+{
+  "name": "stl-viewer-pwa",
+  "version": "1.0.0",
+  "private": true,
+  "description": "可安装到手机的 STL 模型查看器（PWA，离线可用）",
+  "type": "module",
+  "scripts": {
+    "demo": "node scripts/make-demo.mjs",
+    "icons": "node scripts/make-icons.mjs",
+    "dev": "node scripts/dev.mjs",
+    "build": "node scripts/build.mjs",
+    "preview": "node scripts/serve.mjs"
+  },
+  "dependencies": {
+    "three": "^0.187.0"
+  },
+  "devDependencies": {
+    "esbuild": "^0.28.2"
+  }
+}
