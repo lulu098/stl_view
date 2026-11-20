@@ -1,5 +1,13 @@
+<<<<<<< HEAD
 node_modules/
 dist/
 .certs/
 *.log
 .DS_Store
+=======
+node_modules/
+dist/
+.certs/
+*.log
+.DS_Store
+>>>>>>> b45397adc20b4f0cd4d87c84ba573c29920fb8ca
