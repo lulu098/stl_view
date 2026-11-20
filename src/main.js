@@ -196,7 +196,8 @@ async function loadFiles(fileList) {
       continue;
     }
     setBusy(true, `正在解析 ${file.name}…`);
-    await new Promise((resolve) => requestAnimationFrame(() => resolve()));
+    // 用 setTimeout 让出主线程：后台标签页里 requestAnimationFrame 不会触发，会一直卡住
+    await new Promise((resolve) => setTimeout(resolve, 16));
     try {
       const buffer = await file.arrayBuffer();
       added.push(viewer.addModel(buffer, file.name, file.size));

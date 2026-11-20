@@ -1,11 +1,11 @@
-// 预览 dist/：本机 http + 局域网 https（自签名证书，用于在手机上安装 PWA）
+// 预览构建产物（仓库根目录）：本机 http + 局域网 https（本地 CA 证书，用于在手机上安装 PWA）
 import http from 'node:http';
 import https from 'node:https';
 import { createReadStream, existsSync, mkdirSync, readFileSync, statSync, writeFileSync } from 'node:fs';
 import { execFileSync } from 'node:child_process';
 import os from 'node:os';
 import path from 'node:path';
-import { DIST, ROOT } from './config.mjs';
+import { ROOT, SITE } from './config.mjs';
 
 const HTTP_PORT = Number(process.env.PORT || 8080);
 const HTTPS_PORT = Number(process.env.HTTPS_PORT || 8443);
@@ -26,8 +26,70 @@ const MIME = {
   '.map': 'application/json; charset=utf-8',
 };
 
+// 源码/依赖目录不对外服务
+const BLOCKED_PATH = /^\/(node_modules|src|scripts|public|\.git|\.certs|package(-lock)?\.json)/;
+
 // 虚拟网卡（VirtualBox / VMware / Hyper-V / 蓝牙 / WSL 等）手机一般是连不上的
-const VIRTUAL_ADAPTER = /virtualbox|vmware|hyper-?v|vethernet|default switch|loopback|bluetooth|bluetooth|wsl|docker|tap|tun\d|tailscale|zerotier|hamachi|npcap|本地连接\s*\*/i;
+const VIRTUAL_ADAPTER =
+  /virtualbox|vmware|hyper-?v|vethernet|default switch|loopback|bluetooth|wsl|docker|tap|tun\d|tailscale|zerotier|hamachi|npcap|本地连接\s*\*/i;
+
+function handleRequest(request, response) {
+  let pathname;
+  try {
+    pathname = decodeURIComponent(new URL(request.url, 'http://localhost').pathname);
+  } catch {
+    response.writeHead(400).end('Bad Request');
+    return;
+  }
+
+  // 手机下载本地 CA 证书（安装后浏览器才会信任 https 站点）
+  if (pathname === '/ca.crt' || pathname === '/ca.pem') {
+    const caPath = path.join(CERT_DIR, 'ca.pem');
+    if (!existsSync(caPath)) {
+      response.writeHead(404, { 'Content-Type': 'text/plain; charset=utf-8' });
+      response.end('尚未生成本地 CA（需要 openssl）');
+      return;
+    }
+    response.writeHead(200, {
+      'Content-Type': 'application/x-x509-ca-cert',
+      'Content-Disposition': 'attachment; filename="stl-viewer-ca.crt"',
+      'Cache-Control': 'no-store',
+    });
+    createReadStream(caPath).pipe(response);
+    return;
+  }
+
+  if (BLOCKED_PATH.test(pathname)) {
+    response.writeHead(404).end('Not Found');
+    return;
+  }
+
+  let filePath = path.join(SITE, pathname);
+  if (!filePath.startsWith(SITE)) {
+    response.writeHead(403).end('Forbidden');
+    return;
+  }
+
+  if (existsSync(filePath) && statSync(filePath).isDirectory()) {
+    filePath = path.join(filePath, 'index.html');
+  }
+  if (!existsSync(filePath)) {
+    filePath = path.join(SITE, 'index.html');
+  }
+
+  const extension = path.extname(filePath).toLowerCase();
+  const noCache = ['.html', '.webmanifest', '.js'].includes(extension);
+  response.writeHead(200, {
+    'Content-Type': MIME[extension] || 'application/octet-stream',
+    'Cache-Control': noCache ? 'no-cache' : 'public, max-age=300',
+    'Service-Worker-Allowed': '/',
+  });
+  if (request.method === 'HEAD') {
+    response.end();
+    return;
+  }
+  createReadStream(filePath).pipe(response);
+}
 
 /** 默认路由所在网卡名，用于挑出「真正上网的那块网卡」 */
 function defaultRouteInterface() {
@@ -84,59 +146,6 @@ function describe(item) {
   if (item.isDefault) tags.push('默认上网网卡');
   if (item.isVirtual) tags.push('虚拟网卡，手机通常连不上');
   return tags.length ? `  [${item.name}｜${tags.join('，')}]` : `  [${item.name}]`;
-}
-
-function handleRequest(request, response) {
-  let pathname;
-  try {
-    pathname = decodeURIComponent(new URL(request.url, 'http://localhost').pathname);
-  } catch {
-    response.writeHead(400).end('Bad Request');
-    return;
-  }
-
-  // 手机下载本地 CA 证书（安装后浏览器才会信任 https 站点）
-  if (pathname === '/ca.crt' || pathname === '/ca.pem') {
-    const caPath = path.join(CERT_DIR, 'ca.pem');
-    if (!existsSync(caPath)) {
-      response.writeHead(404, { 'Content-Type': 'text/plain; charset=utf-8' });
-      response.end('尚未生成本地 CA（需要 openssl）');
-      return;
-    }
-    response.writeHead(200, {
-      'Content-Type': 'application/x-x509-ca-cert',
-      'Content-Disposition': 'attachment; filename="stl-viewer-ca.crt"',
-      'Cache-Control': 'no-store',
-    });
-    createReadStream(caPath).pipe(response);
-    return;
-  }
-
-  let filePath = path.join(DIST, pathname);
-  if (!filePath.startsWith(DIST)) {
-    response.writeHead(403).end('Forbidden');
-    return;
-  }
-
-  if (existsSync(filePath) && statSync(filePath).isDirectory()) {
-    filePath = path.join(filePath, 'index.html');
-  }
-  if (!existsSync(filePath)) {
-    filePath = path.join(DIST, 'index.html');
-  }
-
-  const extension = path.extname(filePath).toLowerCase();
-  const noCache = ['.html', '.webmanifest', '.js'].includes(extension);
-  response.writeHead(200, {
-    'Content-Type': MIME[extension] || 'application/octet-stream',
-    'Cache-Control': noCache ? 'no-cache' : 'public, max-age=300',
-    'Service-Worker-Allowed': '/',
-  });
-  if (request.method === 'HEAD') {
-    response.end();
-    return;
-  }
-  createReadStream(filePath).pipe(response);
 }
 
 function findOpenSSL() {
@@ -237,8 +246,8 @@ function ensureCertificate(ips, openssl) {
   }
 }
 
-if (!existsSync(path.join(DIST, 'index.html'))) {
-  console.error('dist/ 不存在，请先运行 `npm run build`。');
+if (!existsSync(path.join(SITE, 'index.html')) || !existsSync(path.join(SITE, 'app.js'))) {
+  console.error('还没有构建产物，请先运行 `npm run build`。');
   process.exit(1);
 }
 
@@ -288,8 +297,8 @@ if (certificate) {
       console.log('     iPhone：设置 → 已下载描述文件 → 安装 → 通用 → 关于本机 → 证书信任设置 → 开启完全信任');
       console.log('  3) 再用上面的 https 地址打开，安装提示就会正常出现');
       console.log('  Android Chrome：右上角菜单 → “安装应用”；iPhone Safari：分享 → “添加到主屏幕”');
-      console.log('\n如果嫌麻烦，最省事的是把 dist/ 部署到任意静态托管（GitHub Pages / Cloudflare Pages / Netlify），');
-      console.log('那里有受信任的 HTTPS，直接就能安装。');
+      console.log('\n如果嫌麻烦，最省事的是把整个仓库部署到支持 HTTPS 的静态托管');
+      console.log('（GitHub Pages / Cloudflare Pages / Netlify），那里证书受信任，直接就能安装。');
       console.log(`\n若手机完全打不开，说明 Windows 防火墙拦了 node（端口 ${HTTP_PORT}/${HTTPS_PORT}），`);
       console.log('用管理员 PowerShell 执行：');
       console.log(
