@@ -6,8 +6,8 @@
       name="viewport"
       content="width=device-width, initial-scale=1, viewport-fit=cover, maximum-scale=1, user-scalable=no"
     />
-    <title>STL 鏌ョ湅鍣?/title>
-    <meta name="description" content="绂荤嚎鍙敤鐨?STL 妯″瀷鏌ョ湅鍣細瑙︽懜鏃嬭浆銆佸弻鎸囩缉鏀惧钩绉伙紝鏀寔澶氭ā鍨嬩笌鎴浘銆? />
+    <title>STL 查看器</title>
+    <meta name="description" content="离线可用的 STL 模型查看器：触摸旋转、双指缩放平移，支持多模型与截图。" />
     <link rel="manifest" href="./manifest.webmanifest" />
     <link rel="icon" href="./icons/favicon.svg" type="image/svg+xml" />
     <link rel="apple-touch-icon" href="./icons/apple-touch-icon.png" />
@@ -15,7 +15,7 @@
     <meta name="mobile-web-app-capable" content="yes" />
     <meta name="apple-mobile-web-app-capable" content="yes" />
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
-    <meta name="apple-mobile-web-app-title" content="STL 鏌ョ湅鍣? />
+    <meta name="apple-mobile-web-app-title" content="STL 查看器" />
     <link rel="stylesheet" href="./app.css" />
   </head>
   <body>
@@ -84,23 +84,23 @@
       <header class="topbar">
         <div class="brand">
           <svg class="icon icon-brand"><use href="#i-cube" /></svg>
-          <span class="brand-name">STL 鏌ョ湅鍣?/span>
+          <span class="brand-name">STL 查看器</span>
         </div>
         <div class="topbar-actions">
           <button id="btn-install" class="btn btn-ghost" type="button" hidden>
             <svg class="icon"><use href="#i-install" /></svg>
-            <span>瀹夎</span>
+            <span>安装</span>
           </button>
           <button id="btn-open" class="btn btn-primary" type="button">
             <svg class="icon"><use href="#i-upload" /></svg>
-            <span>鎵撳紑</span>
+            <span>打开</span>
           </button>
         </div>
       </header>
 
       <aside id="models" class="models" hidden>
         <div class="models-head">
-          <span>宸插姞杞?<b id="model-count">0</b></span>
+          <span>已加载 <b id="model-count">0</b></span>
         </div>
         <div id="model-list" class="model-list"></div>
       </aside>
@@ -110,43 +110,43 @@
       <div id="empty" class="empty">
         <div class="empty-card">
           <svg class="icon empty-icon"><use href="#i-cube" /></svg>
-          <h1>鎵撳紑 STL 妯″瀷</h1>
-          <p>鎷栧叆鏂囦欢鎴栫偣鍑讳笅鏂规寜閽紝鏀寔浜岃繘鍒?/ ASCII STL锛屽彲涓€娆℃墦寮€澶氫釜鏂囦欢</p>
+          <h1>打开 STL 模型</h1>
+          <p>拖入文件或点击下方按钮，支持二进制 / ASCII STL，可一次打开多个文件</p>
           <div class="empty-actions">
-            <button id="btn-open-empty" class="btn btn-primary" type="button">閫夋嫨鏂囦欢</button>
-            <button id="btn-demo" class="btn btn-ghost" type="button">鎵撳紑绀轰緥妯″瀷</button>
+            <button id="btn-open-empty" class="btn btn-primary" type="button">选择文件</button>
+            <button id="btn-demo" class="btn btn-ghost" type="button">打开示例模型</button>
           </div>
         </div>
       </div>
 
-      <nav class="toolbar" id="toolbar" aria-label="瑙嗗浘宸ュ叿">
-        <button class="tool" type="button" data-action="fit" title="閲嶇疆瑙嗚 (R)">
-          <svg class="icon"><use href="#i-fit" /></svg><span>瑙嗚</span>
+      <nav class="toolbar" id="toolbar" aria-label="视图工具">
+        <button class="tool" type="button" data-action="fit" title="重置视角 (R)">
+          <svg class="icon"><use href="#i-fit" /></svg><span>视角</span>
         </button>
-        <button class="tool" type="button" data-action="rotate" data-toggle="true" aria-pressed="false" title="鑷姩鏃嬭浆 (A)">
-          <svg class="icon"><use href="#i-rotate" /></svg><span>鏃嬭浆</span>
+        <button class="tool" type="button" data-action="rotate" data-toggle="true" aria-pressed="false" title="自动旋转 (A)">
+          <svg class="icon"><use href="#i-rotate" /></svg><span>旋转</span>
         </button>
-        <button class="tool" type="button" data-action="wireframe" data-toggle="true" aria-pressed="false" title="绾挎 (W)">
-          <svg class="icon"><use href="#i-wire" /></svg><span>绾挎</span>
+        <button class="tool" type="button" data-action="wireframe" data-toggle="true" aria-pressed="false" title="线框 (W)">
+          <svg class="icon"><use href="#i-wire" /></svg><span>线框</span>
         </button>
-        <button class="tool" type="button" data-action="grid" data-toggle="true" aria-pressed="false" title="缃戞牸 (G)">
-          <svg class="icon"><use href="#i-grid" /></svg><span>缃戞牸</span>
+        <button class="tool" type="button" data-action="grid" data-toggle="true" aria-pressed="false" title="网格 (G)">
+          <svg class="icon"><use href="#i-grid" /></svg><span>网格</span>
         </button>
-        <button class="tool" type="button" data-action="shot" title="鎴浘 (S)">
-          <svg class="icon"><use href="#i-camera" /></svg><span>鎴浘</span>
+        <button class="tool" type="button" data-action="shot" title="截图 (S)">
+          <svg class="icon"><use href="#i-camera" /></svg><span>截图</span>
         </button>
-        <button class="tool" type="button" data-action="fullscreen" title="鍏ㄥ睆 (F)">
-          <svg class="icon"><use href="#i-fullscreen" /></svg><span>鍏ㄥ睆</span>
+        <button class="tool" type="button" data-action="fullscreen" title="全屏 (F)">
+          <svg class="icon"><use href="#i-fullscreen" /></svg><span>全屏</span>
         </button>
-        <button class="tool" type="button" data-action="clear" title="娓呯┖鍏ㄩ儴 (Delete)">
-          <svg class="icon"><use href="#i-trash" /></svg><span>娓呯┖</span>
+        <button class="tool" type="button" data-action="clear" title="清空全部 (Delete)">
+          <svg class="icon"><use href="#i-trash" /></svg><span>清空</span>
         </button>
       </nav>
 
       <div id="toast" class="toast" role="status" aria-live="polite" hidden></div>
 
       <div id="drop" class="drop" hidden>
-        <div class="drop-card">鏉惧紑鎵嬫寚鍗冲彲鎵撳紑</div>
+        <div class="drop-card">松开手指即可打开</div>
       </div>
 
       <input id="file" type="file" accept=".stl,model/stl,application/sla" multiple hidden />
