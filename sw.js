@@ -1,5 +1,5 @@
 /* eslint-env serviceworker */
-const VERSION = 'dev';
+const VERSION = '20261121081848';
 const CACHE_NAME = `stl-viewer-${VERSION}`;
 
 const PRECACHE_URLS = [

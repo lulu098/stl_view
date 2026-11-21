@@ -15,6 +15,19 @@ const toastEl = $('#toast');
 const dropEl = $('#drop');
 const btnInstall = $('#btn-install');
 const toolbar = $('#toolbar');
+const colorPicker = $('#color-picker');
+const colorSwatches = $('#color-swatches');
+const colorInput = $('#color-input');
+const colorCustomSwatch = $('#color-custom-swatch');
+const rotatePanel = $('#rotate-panel');
+
+const COLOR_PRESETS = [
+  '#3b82f6', '#0ea5e9', '#22d3ee',
+  '#22c55e', '#a3e635',
+  '#f59e0b', '#f97316',
+  '#ef4444', '#ec4899', '#a855f7', '#8b5cf6',
+  '#94a3b8', '#64748b', '#f8fafc',
+];
 
 const MAX_FILE_SIZE = 300 * 1024 * 1024;
 const numberFormat = new Intl.NumberFormat('zh-CN');
@@ -110,6 +123,20 @@ function renderModels() {
     meta.className = 'model-meta';
     meta.textContent = `${formatCount(model.stats.triangles)} 面`;
 
+    const colorButton = document.createElement('button');
+    colorButton.type = 'button';
+    colorButton.className = 'icon-btn';
+    colorButton.dataset.role = 'color';
+    colorButton.title = '更改颜色';
+    colorButton.innerHTML = '<svg class="icon"><use href="#i-palette" /></svg>';
+
+    const rotateButton = document.createElement('button');
+    rotateButton.type = 'button';
+    rotateButton.className = 'icon-btn';
+    rotateButton.dataset.role = 'rotate';
+    rotateButton.title = '旋转模型';
+    rotateButton.innerHTML = '<svg class="icon"><use href="#i-rotate" /></svg>';
+
     const toggle = document.createElement('button');
     toggle.type = 'button';
     toggle.className = 'icon-btn';
@@ -124,7 +151,7 @@ function renderModels() {
     remove.title = '移除';
     remove.innerHTML = '<svg class="icon"><use href="#i-close" /></svg>';
 
-    row.append(dot, name, meta, toggle, remove);
+    row.append(dot, name, meta, rotateButton, colorButton, toggle, remove);
     modelList.append(row);
   }
 }
@@ -181,6 +208,95 @@ function refresh() {
   renderModels();
   renderInfo();
 }
+
+/* ---------------- 更换颜色 ---------------- */
+let colorTargetId = null;
+
+// 构建预设色板（一次性）
+for (const preset of COLOR_PRESETS) {
+  const swatch = document.createElement('button');
+  swatch.type = 'button';
+  swatch.className = 'swatch';
+  swatch.dataset.color = preset;
+  swatch.style.background = preset;
+  swatch.setAttribute('aria-label', `颜色 ${preset}`);
+  colorSwatches.append(swatch);
+}
+
+function syncColorPicker(id) {
+  const model = viewer.getModel(id);
+  if (!model) return;
+  colorInput.value = model.color;
+  colorCustomSwatch.style.background = model.color;
+  for (const swatch of colorSwatches.children) {
+    swatch.classList.toggle('is-active', swatch.dataset.color.toLowerCase() === model.color.toLowerCase());
+  }
+}
+
+function openColorPicker(id) {
+  colorTargetId = id;
+  syncColorPicker(id);
+  colorPicker.hidden = false;
+}
+
+function closeColorPicker() {
+  colorPicker.hidden = true;
+  colorTargetId = null;
+}
+
+colorSwatches.addEventListener('click', (event) => {
+  const swatch = event.target.closest('.swatch');
+  if (!swatch || colorTargetId == null) return;
+  viewer.setModelColor(colorTargetId, swatch.dataset.color);
+  refresh();
+  syncColorPicker(colorTargetId);
+});
+
+colorInput.addEventListener('input', () => {
+  if (colorTargetId == null) return;
+  viewer.setModelColor(colorTargetId, colorInput.value);
+  colorCustomSwatch.style.background = colorInput.value;
+  refresh();
+});
+
+colorInput.addEventListener('change', () => {
+  if (colorTargetId == null) return;
+  syncColorPicker(colorTargetId);
+});
+
+document.addEventListener('click', (event) => {
+  if (colorPicker.hidden) return;
+  if (event.target.closest('#color-picker') || event.target.closest('[data-role="color"]')) return;
+  closeColorPicker();
+});
+
+/* ---------------- 旋转模型 ---------------- */
+let rotateTargetId = null;
+
+function openRotatePanel(id) {
+  rotateTargetId = id;
+  rotatePanel.hidden = false;
+}
+
+function closeRotatePanel() {
+  rotatePanel.hidden = true;
+  rotateTargetId = null;
+}
+
+rotatePanel.addEventListener('click', (event) => {
+  const btn = event.target.closest('.rotate-btn');
+  if (!btn || rotateTargetId == null) return;
+  const axis = btn.dataset.axis;
+  const deg = Number(btn.dataset.deg);
+  viewer.rotateModel(rotateTargetId, axis, deg);
+  refresh();
+});
+
+document.addEventListener('click', (event) => {
+  if (rotatePanel.hidden) return;
+  if (event.target.closest('#rotate-panel') || event.target.closest('[data-role="rotate"]')) return;
+  closeRotatePanel();
+});
 
 /* ---------------- 加载文件 ---------------- */
 async function loadFiles(fileList) {
@@ -356,12 +472,30 @@ modelList.addEventListener('click', (event) => {
   }
   if (role === 'remove') {
     viewer.removeModel(id);
+    closeColorPicker();
+    closeRotatePanel();
     refresh();
     if (viewer.models.length > 0) viewer.fit();
     return;
   }
+  if (role === 'color') {
+    viewer.select(id);
+    refresh();
+    closeRotatePanel();
+    openColorPicker(id);
+    return;
+  }
+  if (role === 'rotate') {
+    viewer.select(id);
+    refresh();
+    closeColorPicker();
+    openRotatePanel(id);
+    return;
+  }
 
   viewer.select(viewer.selectedId === id ? null : id);
+  closeColorPicker();
+  closeRotatePanel();
   const target = viewer.selectedId ? id : null;
   if (target) viewer.fit([target]);
   refresh();

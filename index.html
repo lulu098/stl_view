@@ -75,6 +75,12 @@
         <symbol id="i-close" viewBox="0 0 24 24">
           <path d="M6 6l12 12M18 6 6 18" />
         </symbol>
+        <symbol id="i-palette" viewBox="0 0 24 24">
+          <path d="M12 3.2a8.8 8.8 0 1 0 0 17.6c1.05 0 1.65-.82 1.65-1.68 0-.42-.17-.8-.47-1.1a1.6 1.6 0 0 1-.45-1.1c0-.86.7-1.6 1.6-1.6h2.05A5.62 5.62 0 0 0 22 9.7C22 6.1 17.97 3.2 12 3.2Z" />
+          <circle cx="7.2" cy="10.4" r="1.05" />
+          <circle cx="9.8" cy="6.8" r="1.05" />
+          <circle cx="14.3" cy="6.8" r="1.05" />
+        </symbol>
       </defs>
     </svg>
 
@@ -103,6 +109,26 @@
           <span>已加载 <b id="model-count">0</b></span>
         </div>
         <div id="model-list" class="model-list"></div>
+
+        <div id="color-picker" class="color-picker" hidden>
+          <div class="color-picker-title">选择颜色</div>
+          <div class="color-swatches" id="color-swatches"></div>
+          <input id="color-input" type="color" aria-label="自定义颜色" />
+          <label class="color-custom" for="color-input">
+            <span class="color-custom-swatch" id="color-custom-swatch"></span>
+            <span>自定义</span>
+          </label>
+        </div>
+
+        <div id="rotate-panel" class="rotate-panel" hidden>
+          <div class="rotate-title">旋转模型（90°）</div>
+          <div class="rotate-buttons">
+            <button type="button" class="rotate-btn" data-axis="x" data-deg="90">绕 X 翻转</button>
+            <button type="button" class="rotate-btn" data-axis="y" data-deg="90">绕 Y 旋转</button>
+            <button type="button" class="rotate-btn" data-axis="z" data-deg="90">绕 Z 旋转</button>
+            <button type="button" class="rotate-btn" data-axis="x" data-deg="-90">绕 X 反向</button>
+          </div>
+        </div>
       </aside>
 
       <section id="info" class="info" hidden></section>
